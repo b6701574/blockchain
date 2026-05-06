@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Certificate Verification</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+</head>
+<body style="font-family: Arial; text-align:center; margin-top:50px;">
+
+<h1>Blockchain Certificate</h1>
+<button onclick="connect()">Connect MetaMask</button>
+<div id="result"></div>
+
+<script>
+
+let contract;
+
+async function connect() {
+  if (typeof window.ethereum === "undefined") {
+    alert("Please install MetaMask");
+    return;
+  }
+
+  await window.ethereum.request({ method: "eth_requestAccounts" });
+
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  const signer = provider.getSigner();
+
+  const contractAddress = "0xb1210808a47cb146b2bd98a2684fffa2c581750c";
+
+  const abi = [
+    "function certificates(bytes32) view returns (bytes32 merkleRoot, bool isRevoked, uint256 issuedAt)"
+  ];
+
+  contract = new ethers.Contract(contractAddress, abi, provider);
+
+  verify();
+}
+
+async function verify() {
+
+  const params = new URLSearchParams(window.location.search);
+  const certificateId = params.get("id");
+
+  const cert = await contract.certificates(certificateId);
+
+  if (cert.isRevoked) {
+    document.getElementById("result").innerHTML =
+      "<h2 style='color:red;'>❌ Certificate Revoked</h2>";
+  } else if (cert.issuedAt > 0) {
+    document.getElementById("result").innerHTML =
+      "<h2 style='color:green;'>✅ Certificate Valid</h2>" +
+      "<p>Issued At: " + new Date(cert.issuedAt * 1000) + "</p>";
+  } else {
+    document.getElementById("result").innerHTML =
+      "<h2 style='color:red;'>❌ Certificate Not Found</h2>";
+  }
+}
+
+console.log(window.ethereum);
+
+
+</script>
+
+</body>
+</html>
