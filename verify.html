@@ -1,66 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <title>Certificate Verification</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockchain Certificate Verification</title>
+    
+    <!-- ✅ โหลด Ethers.js จาก CDN สำรองที่เสถียรกว่า -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 50px; background: #f0f2f5; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h1 { color: #1a3c5e; }
+        .verified-box { background: #d4edda; color: #155724; padding: 15px; border-radius: 10px; display: none; margin-top: 20px; border: 1px solid #c3e6cb; }
+        .data-list { text-align: left; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; font-family: 'Courier New', Courier, monospace; overflow-wrap: break-word; }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; background: #f3841d; color: white; border: none; border-radius: 10px; transition: 0.3s; }
+        button:hover { background: #d67118; }
+        .error { color: red; margin-top: 10px; display: none; }
+    </style>
 </head>
-<body style="font-family: Arial; text-align:center; margin-top:50px;">
+<body>
 
-<h1>Blockchain Certificate</h1>
-<button onclick="connect()">Connect MetaMask</button>
-<div id="result"></div>
+    <div class="card">
+        <h1>🎓 Academic Certificate</h1>
+        <p>ตรวจสอบความถูกต้องของวุฒิการศึกษาผ่าน Blockchain</p>
+        
+        <button id="btnConnect">เชื่อมต่อ MetaMask และตรวจสอบ</button>
+        <p id="errorMessage" class="error"></p>
 
-<script>
+        <div id="resultBox" class="verified-box">
+            <span>✓ ตรวจสอบสำเร็จ: ข้อมูลตรงกับ Sepolia Blockchain</span>
+            <div class="data-list">
+                <p><strong>Certificate ID:</strong> <br><span id="txtCertId"></span></p>
+                <p><strong>Merkle Root:</strong> <br><span id="txtRoot"></span></p>
+                <p><strong>Issued At:</strong> <br><span id="txtTime"></span></p>
+                <p><strong>Status:</strong> <span style="color: green;">Active (Not Revoked)</span></p>
+            </div>
+        </div>
+    </div>
 
-let contract;
+    <script>
+        // 🚩 1. แก้ไขเป็น ADDRESS สัญญาของคุณบน SEPOLIA
+        const CONTRACT_ADDRESS = "0xE79c18054B859b4Ff2cfab5240FB05Bf9c93B276"; 
 
-async function connect() {
-  if (typeof window.ethereum === "undefined") {
-    alert("Please install MetaMask");
-    return;
-  }
+        // 🚩 2. ABI (ใส่เฉพาะฟังก์ชันที่ต้องใช้)
+        const CONTRACT_ABI = [
+            "function certificates(bytes32) external view returns (bytes32 merkleRoot, bool isRevoked, uint256 issuedAt)"
+        ];
 
-  await window.ethereum.request({ method: "eth_requestAccounts" });
+        document.getElementById('btnConnect').addEventListener('click', async () => {
+            const errorMsg = document.getElementById('errorMessage');
+            const resultBox = document.getElementById('resultBox');
+            errorMsg.style.display = 'none';
 
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-  const signer = provider.getSigner();
+            // ตรวจสอบว่ามี MetaMask ไหม
+            if (!window.ethereum) {
+                alert("กรุณาติดตั้ง MetaMask เพื่อใช้งานการตรวจสอบ");
+                return;
+            }
 
-  const contractAddress = "0xE79c18054B859b4Ff2cfab5240FB05Bf9c93B276";
+            try {
+                // 1. ขอสิทธิ์เชื่อมต่อกระเป๋า
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                
+                // 2. ดึง ID จาก URL
+                const params = new URLSearchParams(window.location.search);
+                const certId = params.get('id');
 
-  const abi = [
-    "function certificates(bytes32) view returns (bytes32 merkleRoot, bool isRevoked, uint256 issuedAt)"
-  ];
+                if (!certId) {
+                    throw new Error("ไม่พบรหัส Certificate ID ในลิงก์ QR Code");
+                }
 
-  contract = new ethers.Contract(contractAddress, abi, provider);
+                // 3. เชื่อมต่อ Smart Contract
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
 
-  verify();
-}
+                // 4. ดึงข้อมูลจาก Blockchain
+                const data = await contract.certificates(certId);
 
-async function verify() {
+                if (data.issuedAt == 0n) {
+                    throw new Error("ไม่พบข้อมูลใบรับรองนี้ในระบบ");
+                }
+                if (data.isRevoked) {
+                    throw new Error("ใบรับรองนี้ถูกยกเลิก (Revoked) แล้ว");
+                }
 
-  const params = new URLSearchParams(window.location.search);
-  const certificateId = params.get("id");
+                // 5. แสดงผลลัพธ์
+                document.getElementById('txtCertId').innerText = certId;
+                document.getElementById('txtRoot').innerText = data.merkleRoot;
+                
+                const date = new Date(Number(data.issuedAt) * 1000);
+                document.getElementById('txtTime').innerText = date.toLocaleString('th-TH');
 
-  const cert = await contract.certificates(certificateId);
+                resultBox.style.display = 'block';
+                document.getElementById('btnConnect').style.display = 'none';
 
-  if (cert.isRevoked) {
-    document.getElementById("result").innerHTML =
-      "<h2 style='color:red;'>❌ Certificate Revoked</h2>";
-  } else if (cert.issuedAt > 0) {
-    document.getElementById("result").innerHTML =
-      "<h2 style='color:green;'>✅ Certificate Valid</h2>" +
-      "<p>Issued At: " + new Date(cert.issuedAt * 1000) + "</p>";
-  } else {
-    document.getElementById("result").innerHTML =
-      "<h2 style='color:red;'>❌ Certificate Not Found</h2>";
-  }
-}
-
-console.log(window.ethereum);
-
-
-</script>
-
+            } catch (err) {
+                console.error(err);
+                errorMsg.innerText = err.message;
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>
