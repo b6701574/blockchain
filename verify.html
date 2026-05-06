@@ -67,8 +67,7 @@
     <script>
         // 🚩 1. ใส่ข้อมูลที่ถูกต้องของคุณตรงนี้
         const CONTRACT_ADDRESS = "0xf3f4DF7684cC599D4D799A4F47CCe18406A3E977"; 
-        const RPC_URL = "https://rpc.sepolia.org";
-
+        const RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com";
         const ABI = [
             "function certificates(bytes32) external view returns (bytes32 merkleRoot, bool isRevoked, uint256 issuedAt)",
             "function getStudentRecord(string memory _studentId) external view returns (tuple(uint256 courseCode, string grade)[] memory)"
