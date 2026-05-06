@@ -3,101 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Academic Certificate Verification</title>
+    <title>Digital Transcript Verification</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 500px; margin: 20px auto; }
-        .loading { color: #f3841d; font-weight: bold; }
-        .result { display: none; }
-        .verified-header { color: #28a745; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
-        .data-box { text-align: left; background: #f8f9fa; padding: 20px; border-radius: 10px; font-family: monospace; word-break: break-all; }
-        .error-header { color: #dc3545; font-weight: bold; }
-        .footer-link { margin-top: 20px; font-size: 12px; color: #666; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-top: 8px solid #f3841d; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .status-verified { color: #28a745; font-weight: bold; font-size: 1.2em; margin-bottom: 10px; }
+        
+        .student-info { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left; line-height: 1.6; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border-bottom: 1px solid #eee; padding: 12px; text-align: left; }
+        th { background: #f8f9fa; color: #666; font-size: 0.9em; }
+        .grade { font-weight: bold; color: #1a3c5e; }
+
+        .loading { text-align: center; padding: 40px; color: #f3841d; font-weight: bold; }
+        .error-box { display: none; color: #dc3545; background: #ffe6e6; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        .footer { margin-top: 30px; font-size: 11px; color: #999; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <div id="status" class="loading">⏳ กำลังตรวจสอบข้อมูลกับ Blockchain...</div>
+    <div class="container">
+        <div id="loading" class="loading">⏳ กำลังโหลดข้อมูลจาก Blockchain...</div>
 
-        <div id="resultArea" class="result">
-            <div class="verified-header">✓ Verified Certificate</div>
-            <p>ใบรับรองนี้ได้รับการยืนยันความถูกต้องแล้ว</p>
-            <div class="data-box">
-                <p><strong>Certificate ID:</strong><br><span id="displayID"></span></p>
-                <p><strong>Merkle Root:</strong><br><span id="displayRoot"></span></p>
-                <p><strong>Issued At:</strong><br><span id="displayTime"></span></p>
+        <div id="content" style="display: none;">
+            <div class="header">
+                <div class="status-verified">✓ ตรวจสอบความถูกต้องเรียบร้อย</div>
+                <h2 style="margin: 5px 0;">ใบแสดงผลการเรียนดิจิทัล</h2>
+                <small style="color: #888;">Blockchain Academic Record</small>
             </div>
-            <div class="footer-link">
-                <p>Verified by Smart Contract on Sepolia Testnet</p>
+
+            <div class="student-info">
+                <strong>รหัสนักศึกษา:</strong> <span id="studentId"></span><br>
+                <strong>เลขที่ใบรับรอง:</strong> <span id="certId" style="font-size: 0.8em; color: #666;"></span><br>
+                <strong>วันที่ออกเอกสาร:</strong> <span id="issueDate"></span>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>รหัสวิชา</th>
+                        <th>เกรด</th>
+                    </tr>
+                </thead>
+                <tbody id="transcriptBody">
+                    <!-- ข้อมูลเกรดจะถูกเพิ่มที่นี่ -->
+                </tbody>
+            </table>
+
+            <div class="footer">
+                ข้อมูลนี้ถูกบันทึกและยืนยันอย่างถาวรบน Sepolia Testnet<br>
+                Smart Contract: <span id="contractAddr"></span>
             </div>
         </div>
 
-        <div id="errorArea" class="result">
-            <div class="error-header">❌ ไม่สามารถยืนยันข้อมูลได้</div>
-            <p id="errorMsg"></p>
+        <div id="errorBox" class="error-box">
+            <strong>❌ ตรวจสอบไม่สำเร็จ:</strong> <span id="errorMsg"></span>
         </div>
     </div>
 
     <script>
-        // 🚩 1. ใส่ Contract Address ของคุณ
+        // 🚩 1. ใส่ข้อมูลที่ถูกต้องของคุณตรงนี้
         const CONTRACT_ADDRESS = "0xf3f4DF7684cC599D4D799A4F47CCe18406A3E977"; 
+        const RPC_URL = "https://rpc.sepolia.org";
 
-        // 🚩 2. ใช้ Public RPC สำหรับ Sepolia (ไม่ต้องง้อ MetaMask)
-        const RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com";
-
-        const CONTRACT_ABI = [
-            "function certificates(bytes32) external view returns (bytes32 merkleRoot, bool isRevoked, uint256 issuedAt)"
+        const ABI = [
+            "function certificates(bytes32) external view returns (bytes32 merkleRoot, bool isRevoked, uint256 issuedAt)",
+            "function getStudentRecord(string memory _studentId) external view returns (tuple(uint256 courseCode, string grade)[] memory)"
         ];
 
-        async function verify() {
-            const status = document.getElementById('status');
-            const resultArea = document.getElementById('resultArea');
-            const errorArea = document.getElementById('errorArea');
+        async function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const certId = urlParams.get('id');
+            const studentId = urlParams.get('studentId'); // รับรหัสนักศึกษาเพิ่ม
+
+            if (!certId || !studentId) {
+                showError("ลิงก์ไม่สมบูรณ์ (ต้องมีทั้ง id และ studentId)");
+                return;
+            }
 
             try {
-                // ดึง ID จาก URL
-                const params = new URLSearchParams(window.location.search);
-                const certId = params.get('id');
-
-                if (!certId) {
-                    throw new Error("ไม่พบรหัสใบรับรองในลิงก์");
-                }
-
-                // เชื่อมต่อกับ Blockchain ผ่าน Public RPC
                 const provider = new ethers.JsonRpcProvider(RPC_URL);
-                const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
 
-                // ดึงข้อมูล
-                const data = await contract.certificates(certId);
+                // 1. ดึงสถานะใบเซอร์ (เช็คว่ามีจริงไหม / โดนยกเลิกไหม)
+                const certData = await contract.certificates(certId);
+                if (certData.issuedAt === 0n) throw new Error("ไม่พบเลขที่ใบรับรองนี้ใน Blockchain");
+                if (certData.isRevoked) throw new Error("ใบรับรองนี้ถูกเพิกถอน (Revoked) แล้ว");
 
-                if (data.issuedAt === 0n) {
-                    throw new Error("ไม่พบข้อมูลใบรับรองนี้บนระบบ Blockchain");
-                }
-                if (data.isRevoked) {
-                    throw new Error("ใบรับรองนี้ถูกยกเลิก (Revoked) แล้ว");
-                }
+                // 2. ดึงข้อมูล Transcript (รายวิชาและเกรด)
+                const transcript = await contract.getStudentRecord(studentId);
 
                 // แสดงผล
-                document.getElementById('displayID').innerText = certId;
-                document.getElementById('displayRoot').innerText = data.merkleRoot;
-                const date = new Date(Number(data.issuedAt) * 1000);
-                document.getElementById('displayTime').innerText = date.toLocaleString('th-TH');
+                document.getElementById('studentId').innerText = studentId;
+                document.getElementById('certId').innerText = certId;
+                document.getElementById('contractAddr').innerText = CONTRACT_ADDRESS;
+                
+                const date = new Date(Number(certData.issuedAt) * 1000);
+                document.getElementById('issueDate').innerText = date.toLocaleString('th-TH');
 
-                status.style.display = 'none';
-                resultArea.style.display = 'block';
+                const tbody = document.getElementById('transcriptBody');
+                transcript.forEach(course => {
+                    const row = `<tr>
+                        <td>${course.courseCode}</td>
+                        <td class="grade">${course.grade}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                });
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
 
             } catch (err) {
-                console.error(err);
-                status.style.display = 'none';
-                document.getElementById('errorMsg').innerText = err.message;
-                errorArea.style.display = 'block';
+                showError(err.message);
             }
         }
 
-        // เริ่มทำงานทันทีที่โหลดหน้าเว็บ
-        window.onload = verify;
+        function showError(msg) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('errorMsg').innerText = msg;
+            document.getElementById('errorBox').style.display = 'block';
+        }
+
+        window.onload = init;
     </script>
 </body>
 </html>
