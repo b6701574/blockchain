@@ -3,130 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Transcript Verification</title>
-    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+    <title>SUT Blockchain Transcript Verification</title>
+    <!-- Google Fonts: Sarabun -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-top: 8px solid #f3841d; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .status-verified { color: #28a745; font-weight: bold; font-size: 1.2em; margin-bottom: 10px; }
-        
-        .student-info { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: left; line-height: 1.6; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border-bottom: 1px solid #eee; padding: 12px; text-align: left; }
-        th { background: #f8f9fa; color: #666; font-size: 0.9em; }
-        .grade { font-weight: bold; color: #1a3c5e; }
+        :root {
+            --sut-orange: #e67e22;
+            --sut-gold: #f1c40f;
+            --verify-green: #27ae60;
+            --bg-color: #f4f7f6;
+        }
 
-        .loading { text-align: center; padding: 40px; color: #f3841d; font-weight: bold; }
-        .error-box { display: none; color: #dc3545; background: #ffe6e6; padding: 20px; border-radius: 10px; margin-top: 20px; }
-        .footer { margin-top: 30px; font-size: 11px; color: #999; text-align: center; }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-top: 8px solid var(--sut-orange);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 100px;
+            margin-bottom: 10px;
+        }
+
+        .status-badge {
+            background-color: var(--verify-green);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 24px;
+            color: var(--sut-orange);
+        }
+
+        /* ส่วนข้อมูลนักศึกษา */
+        .student-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            background: #fff9f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid #ffe0cc;
+        }
+
+        .info-item b {
+            color: #777;
+            font-size: 14px;
+            display: block;
+        }
+
+        .info-item span {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* ตารางรายวิชา */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        table th {
+            background-color: #eee;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid var(--sut-orange);
+        }
+
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .grade {
+            font-weight: bold;
+            color: var(--sut-orange);
+        }
+
+        /* ข้อมูลทางเทคนิค */
+        .technical-section {
+            font-size: 13px;
+            color: #666;
+            border-top: 1px dashed #ccc;
+            padding-top: 20px;
+        }
+
+        .merkle-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            word-break: break-all;
+            font-family: monospace;
+            border-left: 4px solid #ddd;
+            margin-top: 10px;
+        }
+
+        .disclaimer {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            display: block;
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        @media (max-width: 600px) {
+            .student-info { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div id="loading" class="loading">⏳ กำลังโหลดข้อมูลจาก Blockchain...</div>
+<div class="container">
+    <header>
+        <!-- แทนที่ด้วย URL รูปตรามหาวิทยาลัยจริง -->
+        <img src="https://upload.wikimedia.org/wikipedia/th/thumb/a/a2/Sut_logo.png/220px-Sut_logo.png" alt="SUT Logo" class="logo">
+        <br>
+        <div class="status-badge">✓ ตรวจสอบความถูกต้องผ่านบล็อกเชนแล้ว</div>
+        <h1 class="title">สำนักทะเบียนและประมวลผล</h1>
+        <p>มหาวิทยาลัยเทคโนโลยีสุรนารี</p>
+    </header>
 
-        <div id="content" style="display: none;">
-            <div class="header">
-                <div class="status-verified">✓ ตรวจสอบความถูกต้องเรียบร้อย</div>
-                <h2 style="margin: 5px 0;">ใบแสดงผลการเรียนดิจิทัล</h2>
-                <small style="color: #888;">Blockchain Academic Record</small>
-            </div>
-
-            <div class="student-info">
-                <strong>รหัสนักศึกษา:</strong> <span id="studentId"></span><br>
-                <strong>เลขที่ใบรับรอง:</strong> <span id="certId" style="font-size: 0.8em; color: #666;"></span><br>
-                <strong>วันที่ออกเอกสาร:</strong> <span id="issueDate"></span>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>รหัสวิชา</th>
-                        <th>เกรด</th>
-                    </tr>
-                </thead>
-                <tbody id="transcriptBody">
-                    <!-- ข้อมูลเกรดจะถูกเพิ่มที่นี่ -->
-                </tbody>
-            </table>
-
-            <div class="footer">
-                ข้อมูลนี้ถูกบันทึกและยืนยันอย่างถาวรบน Sepolia Testnet<br>
-                Smart Contract: <span id="contractAddr"></span>
-            </div>
+    <!-- ส่วนข้อมูลส่วนตัว -->
+    <div class="student-info">
+        <div class="info-item">
+            <b>ชื่อ-นามสกุล (Student Name)</b>
+            <span id="studentName">กำลังโหลด...</span>
         </div>
-
-        <div id="errorBox" class="error-box">
-            <strong>❌ ตรวจสอบไม่สำเร็จ:</strong> <span id="errorMsg"></span>
+        <div class="info-item">
+            <b>รหัสนักศึกษา (Student ID)</b>
+            <span id="studentId">-</span>
+        </div>
+        <div class="info-item">
+            <b>ระดับปริญญา (Degree)</b>
+            <span id="degree">-</span>
+        </div>
+        <div class="info-item">
+            <b>สาขาวิชา (Major)</b>
+            <span id="major">-</span>
+        </div>
+        <div class="info-item">
+            <b>คณะ (Faculty)</b>
+            <span id="faculty">-</span>
+        </div>
+        <div class="info-item">
+            <b>เกรดเฉลี่ยสะสม (GPAX)</b>
+            <span id="gpa" style="color: var(--verify-green);">-</span>
         </div>
     </div>
 
-    <script>
-        // 🚩 1. ใส่ข้อมูลที่ถูกต้องของคุณตรงนี้
-        const CONTRACT_ADDRESS = "0x9E2C5B2153d8B17078bcDE509629ec434237A10D"; 
-        const RPC_URL = "https://ethereum-sepolia-rpc.publicnode.com";
-        const ABI = [
-            "function certificates(bytes32) external view returns (bytes32 merkleRoot, bool isRevoked, uint256 issuedAt)",
-            "function getStudentRecord(string memory _studentId) external view returns (tuple(uint256 courseCode, string grade)[] memory)"
-        ];
+    <!-- ตารางรายวิชา -->
+    <h3>รายวิชาที่บันทึก (Course Records)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>รหัสวิชา (Course Code)</th>
+                <th>เกรด (Grade)</th>
+            </tr>
+        </thead>
+        <tbody id="courseTableBody">
+            <!-- ข้อมูลจะถูกใส่ที่นี่ด้วย JS -->
+        </tbody>
+    </table>
 
-        async function init() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const certId = urlParams.get('id');
-            const studentId = urlParams.get('studentId'); // รับรหัสนักศึกษาเพิ่ม
+    <!-- ส่วนข้อมูลทางเทคนิค -->
+    <div class="technical-section">
+        <b>รหัสใบรับรอง (Certificate ID):</b> <span id="certId">-</span> <br>
+        <b>ออกให้เมื่อ (Issued At):</b> <span id="issuedAt">-</span> <br>
+        <b>Merkle Root:</b> 
+        <div class="merkle-box" id="merkleRoot">
+            0x0000000000000000000000000000000000000000000000000000000000000000
+        </div>
+        <small class="disclaimer">
+            * รหัสนี้คือลายเซ็นดิจิทัลที่ใช้คุ้มครองข้อมูลเกรดทั้งหมด หากข้อมูลเกรดถูกแก้ไขแม้แต่ตัวเดียว รหัสนี้จะไม่ตรงกับที่บันทึกไว้ในบล็อกเชน
+        </small>
+    </div>
 
-            if (!certId || !studentId) {
-                showError("ลิงก์ไม่สมบูรณ์ (ต้องมีทั้ง id และ studentId)");
-                return;
-            }
+    <div class="footer-note">
+        © 2024 Suranaree University of Technology - Blockchain Academic Record System
+    </div>
+</div>
 
-            try {
-                const provider = new ethers.JsonRpcProvider(RPC_URL);
-                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script>
+    // --- ส่วนการตั้งค่า Blockchain ---
+    const contractAddress = "0x030d3a2CB346E269675addcBc262c00eAA049C9a";
+    const abi = [
+        "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string degree, string major, string faculty, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked))",
+        "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, string grade)[])"
+    ];
 
-                // 1. ดึงสถานะใบเซอร์ (เช็คว่ามีจริงไหม / โดนยกเลิกไหม)
-                const certData = await contract.certificates(certId);
-                if (certData.issuedAt === 0n) throw new Error("ไม่พบเลขที่ใบรับรองนี้ใน Blockchain");
-                if (certData.isRevoked) throw new Error("ใบรับรองนี้ถูกเพิกถอน (Revoked) แล้ว");
+    async function loadData() {
+        // 1. ดึง Certificate ID จาก URL (เช่น ?id=SUT-TR-2026-0001)
+        const urlParams = new URLSearchParams(window.location.search);
+        const certId = urlParams.get('id');
 
-                // 2. ดึงข้อมูล Transcript (รายวิชาและเกรด)
-                const transcript = await contract.getStudentRecord(studentId);
-
-                // แสดงผล
-                document.getElementById('studentId').innerText = studentId;
-                document.getElementById('certId').innerText = certId;
-                document.getElementById('contractAddr').innerText = CONTRACT_ADDRESS;
-                
-                const date = new Date(Number(certData.issuedAt) * 1000);
-                document.getElementById('issueDate').innerText = date.toLocaleString('th-TH');
-
-                const tbody = document.getElementById('transcriptBody');
-                transcript.forEach(course => {
-                    const row = `<tr>
-                        <td>${course.courseCode}</td>
-                        <td class="grade">${course.grade}</td>
-                    </tr>`;
-                    tbody.innerHTML += row;
-                });
-
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-
-            } catch (err) {
-                showError(err.message);
-            }
+        if (!certId) {
+            alert("ไม่พบรหัสใบรับรองใน URL");
+            return;
         }
 
-        function showError(msg) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('errorMsg').innerText = msg;
-            document.getElementById('errorBox').style.display = 'block';
-        }
+        try {
+            // 2. เชื่อมต่อกับ Sepolia (ใช้ Provider เช่น Infura หรือ Public RPC)
+            const provider = new ethers.JsonRpcProvider("https://sepolia.infura.io/v3/YOUR_INFURA_KEY");
+            const contract = new ethers.Contract(contractAddress, abi, provider);
 
-        window.onload = init;
-    </script>
+            // 3. เรียกข้อมูล Transcript
+            const info = await contract.getTranscript(certId);
+            const courses = await contract.getTranscriptCourses(certId);
+
+            // 4. แสดงผลข้อมูลส่วนตัว
+            document.getElementById("studentName").innerText = info.studentName;
+            document.getElementById("studentId").innerText = info.studentId;
+            document.getElementById("degree").innerText = info.degree;
+            document.getElementById("major").innerText = info.major;
+            document.getElementById("faculty").innerText = info.faculty;
+            document.getElementById("gpa").innerText = (Number(info.gpa) / 100).toFixed(2);
+            document.getElementById("certId").innerText = info.certificateId;
+            document.getElementById("merkleRoot").innerText = info.merkleRoot;
+            
+            const date = new Date(Number(info.issuedAt) * 1000);
+            document.getElementById("issuedAt").innerText = date.toLocaleString('th-TH');
+
+            // 5. แสดงผลตารางรายวิชา
+            const tableBody = document.getElementById("courseTableBody");
+            courses.forEach(course => {
+                const row = `<tr>
+                    <td>${course.courseCode}</td>
+                    <td class="grade">${course.grade}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById("studentName").innerText = "เกิดข้อผิดพลาดในการโหลดข้อมูล";
+        }
+    }
+
+    window.onload = loadData;
+</script>
 </body>
 </html>
