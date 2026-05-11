@@ -218,33 +218,38 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <script>
-    // --- ส่วนการตั้งค่า Blockchain ---
-    const contractAddress = "0x030d3a2CB346E269675addcBc262c00eAA049C9a";
+    // 1. ใส่ที่อยู่ Contract ของคุณที่คัดลอกมาจาก Remix (Sepolia)
+    const contractAddress = "0x030d3a2CB346E269675addcBc262c00eAA049C9a"; 
+
+    // 2. ABI ที่ปรับให้ตรงกับโครงสร้าง Struct ใน Smart Contract ของคุณ
     const abi = [
         "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string degree, string major, string faculty, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked))",
         "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, string grade)[])"
     ];
 
     async function loadData() {
-        // 1. ดึง Certificate ID จาก URL (เช่น ?id=SUT-TR-2026-0001)
         const urlParams = new URLSearchParams(window.location.search);
         const certId = urlParams.get('id');
 
         if (!certId) {
-            alert("ไม่พบรหัสใบรับรองใน URL");
+            document.getElementById("studentName").innerText = "กรุณาระบุ ID ใน URL (เช่น ?id=...)";
             return;
         }
 
         try {
-            // 2. เชื่อมต่อกับ Sepolia (ใช้ Provider เช่น Infura หรือ Public RPC)
-            const provider = new ethers.JsonRpcProvider("https://sepolia.infura.io/v3/YOUR_INFURA_KEY");
+            // ใช้ Public RPC ของ Sepolia (ไม่ต้องใช้ API Key)
+            const provider = new ethers.JsonRpcProvider("https://rpc.ankr.com/eth_sepolia");
             const contract = new ethers.Contract(contractAddress, abi, provider);
 
-            // 3. เรียกข้อมูล Transcript
+            console.log("กำลังดึงข้อมูลสำหรับ ID:", certId);
+
+            // เรียกข้อมูลจากบล็อกเชน
             const info = await contract.getTranscript(certId);
             const courses = await contract.getTranscriptCourses(certId);
 
-            // 4. แสดงผลข้อมูลส่วนตัว
+            console.log("ข้อมูลที่ได้รับ:", info);
+
+            // นำข้อมูลไปใส่ใน HTML
             document.getElementById("studentName").innerText = info.studentName;
             document.getElementById("studentId").innerText = info.studentId;
             document.getElementById("degree").innerText = info.degree;
@@ -257,8 +262,9 @@
             const date = new Date(Number(info.issuedAt) * 1000);
             document.getElementById("issuedAt").innerText = date.toLocaleString('th-TH');
 
-            // 5. แสดงผลตารางรายวิชา
+            // แสดงตารางเกรด
             const tableBody = document.getElementById("courseTableBody");
+            tableBody.innerHTML = ""; // ล้างค่าเดิม
             courses.forEach(course => {
                 const row = `<tr>
                     <td>${course.courseCode}</td>
@@ -268,8 +274,8 @@
             });
 
         } catch (error) {
-            console.error(error);
-            document.getElementById("studentName").innerText = "เกิดข้อผิดพลาดในการโหลดข้อมูล";
+            console.error("Error Detail:", error);
+            document.getElementById("studentName").innerText = "หาข้อมูลไม่พบ หรือรหัสสัญญาผิดพลาด";
         }
     }
 
