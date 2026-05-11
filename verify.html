@@ -218,56 +218,71 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <script>
-    // 1. ใส่ที่อยู่ Contract ของคุณที่คัดลอกมาจาก Remix (Sepolia)
+    // 1. ตรวจสอบ Contract Address (ใช้ตัวที่คุณแจ้งว่า Call ใน Remix ผ่าน)
     const contractAddress = "0xe45dF6a27F408BD0e26DeE1ffcb16c64025D353b"; 
 
-    // 2. ABI ที่ปรับให้ตรงกับโครงสร้าง Struct ใน Smart Contract ของคุณ
     const abi = [
-    "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string dateOfBirth, string nationality, string degree, string major, string faculty, string graduationDate, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked))",
-    "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, string grade)[])"
-];
+        "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string dateOfBirth, string nationality, string degree, string major, string faculty, string graduationDate, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked))",
+        "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, string grade)[])"
+    ];
 
-async function loadData() {
-    // ... โค้ดส่วนดึง ID จาก URL เหมือนเดิม ...
-
-    try {
-        const provider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
-        const contract = new ethers.Contract(contractAddress, abi, provider);
-
-        const info = await contract.getTranscript(certId);
-        const courses = await contract.getTranscriptCourses(certId);
-
-        // แสดงผลข้อมูล (ตรวจสอบว่าเรียกชื่อตัวแปรถูกตามลำดับใหม่)
-        document.getElementById("studentName").innerText = info.studentName;
-        document.getElementById("studentId").innerText = info.studentId;
-        document.getElementById("degree").innerText = info.degree;
-        document.getElementById("major").innerText = info.major;
-        document.getElementById("faculty").innerText = info.faculty;
+    async function loadData() {
+        // ดึง ID จาก URL และลบช่องว่างหัวท้ายออก
+        const urlParams = new URLSearchParams(window.location.search);
+        let certId = urlParams.get('id');
         
-        // ข้อมูลที่เพิ่มมาใหม่ (ถ้าต้องการโชว์ ให้เพิ่ม ID ใน HTML ด้วย)
-        // document.getElementById("dob").innerText = info.dateOfBirth;
-        // document.getElementById("nation").innerText = info.nationality;
-
-        document.getElementById("gpa").innerText = (Number(info.gpa) / 100).toFixed(2);
-        document.getElementById("certId").innerText = info.certificateId;
-        document.getElementById("merkleRoot").innerText = info.merkleRoot;
-        
-        // แก้ไขเรื่องวันที่
-        const timestamp = Number(info.issuedAt);
-        if (timestamp === 0) {
-            document.getElementById("issuedAt").innerText = "ยังไม่ได้ออกใบรับรอง";
-        } else {
-            const date = new Date(timestamp * 1000);
-            document.getElementById("issuedAt").innerText = date.toLocaleString('th-TH');
+        if (certId) {
+            certId = certId.trim(); // ลบช่องว่างที่อาจติดมา
         }
 
-        // ... ส่วนการแสดงตารางเกรดเหมือนเดิม ...
+        console.log("ตรวจสอบรหัส ID ที่กำลังค้นหา:", certId);
 
-    } catch (error) {
-        console.error(error);
-        document.getElementById("studentName").innerText = "ไม่พบข้อมูลใบรับรองนี้";
+        if (!certId || certId === "") {
+            document.getElementById("studentName").innerText = "กรุณาระบุ ID ใน URL";
+            return;
+        }
+
+        try {
+            // ใช้ RPC ที่เสถียรที่สุด
+            const provider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
+            const contract = new ethers.Contract(contractAddress, abi, provider);
+
+            // เรียกข้อมูลจากบล็อกเชน
+            const info = await contract.getTranscript(certId);
+            const courses = await contract.getTranscriptCourses(certId);
+
+            console.log("พบข้อมูลจากบล็อกเชนสำเร็จ:", info);
+
+            // แสดงผลข้อมูล (ดึงตามชื่อฟิลด์ใน Tuple)
+            document.getElementById("studentName").innerText = info.studentName;
+            document.getElementById("studentId").innerText = info.studentId;
+            document.getElementById("degree").innerText = info.degree;
+            document.getElementById("major").innerText = info.major;
+            document.getElementById("faculty").innerText = info.faculty;
+            
+            // GPA (375 -> 3.75)
+            document.getElementById("gpa").innerText = (Number(info.gpa) / 100).toFixed(2);
+            
+            document.getElementById("certId").innerText = info.certificateId;
+            document.getElementById("merkleRoot").innerText = info.merkleRoot;
+            
+            // จัดการวันที่ (timestamp)
+            const timestamp = Number(info.issuedAt);
+            const date = new Date(timestamp * 1000);
+            document.getElementById("issuedAt").innerText = date.toLocaleString('th-TH');
+
+            // แสดงรายการเกรด
+            const tableBody = document.getElementById("courseTableBody");
+            tableBody.innerHTML = ""; 
+            courses.forEach(course => {
+                tableBody.innerHTML += `<tr><td>${course.courseCode}</td><td class="grade">${course.grade}</td></tr>`;
+            });
+
+        } catch (error) {
+            console.error("เกิดข้อผิดพลาดในการเรียกบล็อกเชน:", error);
+            document.getElementById("studentName").innerText = "ไม่พบข้อมูลในบล็อกเชน (โปรดตรวจสอบ ID อีกครั้ง)";
+        }
     }
-}
 
     window.onload = loadData;
 </script>
