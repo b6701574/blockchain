@@ -236,9 +236,9 @@
             return;
         }
 
-        try {
-            // ใช้ Public RPC ของ Sepolia (ไม่ต้องใช้ API Key)
-            const provider = new ethers.JsonRpcProvider("https://rpc.ankr.com/eth_sepolia");
+  try {
+            // ใช้ Public RPC ของ PublicNode (เสถียรและไม่ต้องใช้ Key)
+            const provider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
             const contract = new ethers.Contract(contractAddress, abi, provider);
 
             console.log("กำลังดึงข้อมูลสำหรับ ID:", certId);
