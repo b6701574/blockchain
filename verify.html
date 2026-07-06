@@ -175,7 +175,7 @@ async function loadData() {
         document.getElementById("major").innerText = info.major;
         document.getElementById("faculty").innerText = info.faculty;
         // ปรับหาร 10 ตาม logic ใน Solidity
-        document.getElementById("gpa").innerText = (Number(info.gpa) / 10).toFixed(2); 
+document.getElementById("gpa").innerText = (Number(info.gpa) / 100).toFixed(2);
         document.getElementById("certId").innerText = info.certificateId;
         document.getElementById("merkleRoot").innerText = info.merkleRoot;
 
