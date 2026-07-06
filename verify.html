@@ -130,79 +130,74 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <script>
     const contractAddress = "0x1220f4305944d0dd9d20658bdDE6915bcCEfC4F2";
-    const abi = [
-        "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string dateOfBirth, string nationality, string degree, string major, string faculty, string graduationDate, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked))",
-        "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, string grade)[])"
-    ];
+const abi = [
+    "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string dateOfBirth, string nationality, string degree, string major, string faculty, string graduationDate, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked, bool consentToDisclose))",
+    "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, uint256 credits, string grade)[])"
+];
 
-    async function loadData() {
-        const urlParams = new URLSearchParams(window.location.search);
-        let certId = urlParams.get('id');
-        
-        if (!certId) {
-            document.getElementById("studentName").innerText = "กรุณาระบุ ID ใน URL";
-            return;
-        }
-
-        try {
-            const provider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
-            const contract = new ethers.Contract(contractAddress, abi, provider);
-            
-            const info = await contract.getTranscript(certId.trim());
-            const courses = await contract.getTranscriptCourses(certId.trim());
-
-            // --- ตรวจสอบสถานะ Revoked ---
-            const isRevoked = info.revoked;
-            const statusBadge = document.getElementById("statusBadge");
-            const mainContainer = document.getElementById("mainContainer");
-            const watermark = document.getElementById("watermark");
-
-            if (isRevoked) {
-                statusBadge.innerText = "✖ ใบรับรองนี้ถูกเพิกถอน (Revoked)";
-                statusBadge.className = "status-badge status-revoked";
-                statusBadge.style.display = "inline-block";
-                
-                // ปรับ UI ให้ดูเป็นเอกสารที่มีปัญหา
-                mainContainer.classList.add("revoked-container");
-                watermark.style.display = "block";
-                document.getElementById("headerTitle").classList.add("revoked-text");
-                document.getElementById("gpa").style.color = "var(--revoked-red)";
-            } else {
-                statusBadge.innerText = "✓ ตรวจสอบความถูกต้องผ่านบล็อกเชนแล้ว";
-                statusBadge.className = "status-badge status-valid";
-                statusBadge.style.display = "inline-block";
-                document.getElementById("gpa").style.color = "var(--verify-green)";
-            }
-
-            // แสดงผลข้อมูลพื้นฐาน
-            document.getElementById("studentName").innerText = info.studentName;
-            document.getElementById("studentId").innerText = info.studentId;
-            document.getElementById("degree").innerText = info.degree;
-            document.getElementById("major").innerText = info.major;
-            document.getElementById("faculty").innerText = info.faculty;
-            document.getElementById("gpa").innerText = (Number(info.gpa) / 100).toFixed(2);
-            document.getElementById("certId").innerText = info.certificateId;
-            document.getElementById("merkleRoot").innerText = info.merkleRoot;
-
-            const date = new Date(Number(info.issuedAt) * 1000);
-            document.getElementById("issuedAt").innerText = date.toLocaleString('th-TH');
-
-            // แสดงรายการเกรด
-const tableBody = document.getElementById("courseTableBody");
-tableBody.innerHTML = "";
-courses.forEach(course => {
-    // course.courseCode, course.credits, course.grade
-    tableBody.innerHTML += `
-        <tr>
-            <td>${course.courseCode}</td>
-            <td>${course.grade}</td>
-        </tr>`;
-});
-        } catch (error) {
-            console.error(error);
-            document.getElementById("studentName").innerText = "ไม่พบข้อมูลหรือเกิดข้อผิดพลาด";
-        }
+async function loadData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let certId = urlParams.get('id');
+    
+    if (!certId) {
+        document.getElementById("studentName").innerText = "กรุณาระบุ ID ใน URL";
+        return;
     }
+
+    try {
+        const provider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
+        const contract = new ethers.Contract(contractAddress, abi, provider);
+        
+        // ดึงข้อมูล
+        const info = await contract.getTranscript(certId.trim());
+        const courses = await contract.getTranscriptCourses(certId.trim());
+
+        // ตรวจสอบสถานะ (ใช้ info.revoked ที่มีอยู่)
+        const statusBadge = document.getElementById("statusBadge");
+        const mainContainer = document.getElementById("mainContainer");
+        const watermark = document.getElementById("watermark");
+
+        if (info.revoked) {
+            statusBadge.innerText = "✖ ใบรับรองนี้ถูกเพิกถอน (Revoked)";
+            statusBadge.className = "status-badge status-revoked";
+            mainContainer.classList.add("revoked-container");
+            watermark.style.display = "block";
+        } else {
+            statusBadge.innerText = "✓ ตรวจสอบความถูกต้องผ่านบล็อกเชนแล้ว";
+            statusBadge.className = "status-badge status-valid";
+        }
+        statusBadge.style.display = "inline-block";
+
+        // แสดงผลข้อมูล
+        document.getElementById("studentName").innerText = info.studentName;
+        document.getElementById("studentId").innerText = info.studentId;
+        document.getElementById("degree").innerText = info.degree;
+        document.getElementById("major").innerText = info.major;
+        document.getElementById("faculty").innerText = info.faculty;
+        // ปรับหาร 10 ตาม logic ใน Solidity
+        document.getElementById("gpa").innerText = (Number(info.gpa) / 10).toFixed(2); 
+        document.getElementById("certId").innerText = info.certificateId;
+        document.getElementById("merkleRoot").innerText = info.merkleRoot;
+
+        const date = new Date(Number(info.issuedAt) * 1000);
+        document.getElementById("issuedAt").innerText = date.toLocaleString('th-TH');
+
+        // แสดงรายการเกรด (รวม Credits ด้วย)
+        const tableBody = document.getElementById("courseTableBody");
+        tableBody.innerHTML = "";
+        courses.forEach(course => {
+            tableBody.innerHTML += `
+                <tr>
+                    <td>${course.courseCode} (หน่วยกิต: ${course.credits})</td>
+                    <td style="font-weight:bold; color:var(--sut-orange)">${course.grade}</td>
+                </tr>`;
+        });
+
+    } catch (error) {
+        console.error("เกิดข้อผิดพลาด:", error);
+        document.getElementById("studentName").innerText = "ไม่พบข้อมูล หรือคุณไม่มีสิทธิ์เข้าถึง (PDPA Restricted)";
+    }
+}
 
     window.onload = loadData;
 </script>
