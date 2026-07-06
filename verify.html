@@ -188,12 +188,16 @@
             document.getElementById("issuedAt").innerText = date.toLocaleString('th-TH');
 
             // แสดงรายการเกรด
-            const tableBody = document.getElementById("courseTableBody");
-            tableBody.innerHTML = "";
-            courses.forEach(course => {
-                tableBody.innerHTML += `<tr><td>${course.courseCode}</td><td style="font-weight:bold; color:var(--sut-orange)">${course.grade}</td></tr>`;
-            });
-
+const tableBody = document.getElementById("courseTableBody");
+tableBody.innerHTML = "";
+courses.forEach(course => {
+    // course.courseCode, course.credits, course.grade
+    tableBody.innerHTML += `
+        <tr>
+            <td>${course.courseCode}</td>
+            <td>${course.grade}</td>
+        </tr>`;
+});
         } catch (error) {
             console.error(error);
             document.getElementById("studentName").innerText = "ไม่พบข้อมูลหรือเกิดข้อผิดพลาด";
