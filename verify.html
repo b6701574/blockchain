@@ -128,7 +128,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <script>
-    const contractAddress = "0xe45dF6a27F408BD0e26DeE1ffcb16c64025D353b";
+    const contractAddress = "0x1220f4305944d0dd9d20658bdDE6915bcCEfC4F2";
     const abi = [
         "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string dateOfBirth, string nationality, string degree, string major, string faculty, string graduationDate, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked, bool consentToDisclose))",
         "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, uint256 credits, string grade)[])"
