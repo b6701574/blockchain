@@ -1,203 +1,411 @@
 <!DOCTYPE html>
+
 <html lang="th">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SUT Blockchain Transcript Search</title>
-    <!-- Google Fonts: Sarabun -->
+
+    <title>SUT Blockchain Transcript Verification</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+
     <style>
+
         :root {
+
             --sut-orange: #e67e22;
+
             --sut-gold: #f1c40f;
-            --danger: #e74c3c;
-            --success: #27ae60;
-            --bg-color: #f8f9fa;
+
+            --verify-green: #27ae60;
+
+            --revoked-red: #e74c3c; /* สีสำหรับสถานะเพิกถอน */
+
+            --bg-color: #f4f7f6;
+
         }
 
-        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+
+        body { font-family: 'Sarabun', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: #333; }
+
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-top: 8px solid var(--sut-orange); position: relative; overflow: hidden; }
+
         
-        header { text-align: center; margin-bottom: 40px; }
-        .logo { width: 120px; margin-bottom: 10px; }
 
-        /* ส่วนค้นหา (Search Bar) */
-        .search-section { display: flex; gap: 10px; margin-bottom: 30px; background: #fff8f3; padding: 20px; border-radius: 10px; border: 1px solid #ffe0cc; }
-        input[type="text"] { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; outline: none; }
-        input[type="text"]:focus { border-color: var(--sut-orange); }
-        button { padding: 10px 25px; background: var(--sut-orange); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: 0.3s; }
-        button:hover { background: #d35400; }
+        /* สไตล์สำหรับใบรับรองที่ถูกเพิกถอน */
 
-        /* ส่วนแสดงผลข้อมูล */
-        #resultArea { display: none; }
-        .status-badge { padding: 5px 15px; border-radius: 50px; font-size: 14px; font-weight: bold; margin-bottom: 20px; display: inline-block; }
-        .valid { background: #d4edda; color: #155724; }
-        .pdpa-locked { background: #fff3cd; color: #856404; padding: 20px; border-radius: 10px; text-align: center; }
+        .revoked-container { border-top: 8px solid var(--revoked-red) !important; }
 
-        .student-card { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #fafafa; padding: 20px; border-radius: 10px; border-left: 5px solid var(--sut-orange); margin-bottom: 30px; }
-        .info-item b { color: #888; font-size: 12px; display: block; }
-        .info-item span { font-size: 18px; font-weight: 600; color: #333; }
+        .revoked-watermark {
 
-        /* ตารางรายวิชา */
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #eee; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
-        .grade { font-weight: bold; color: var(--sut-orange); }
+            display: none;
 
-        /* ส่วน Merkle Root */
-        .technical-box { margin-top: 40px; font-size: 13px; color: #666; background: #f9f9f9; padding: 15px; border-radius: 8px; }
-        .merkle-val { font-family: monospace; word-break: break-all; color: #444; background: white; padding: 10px; border: 1px solid #ddd; margin-top: 5px; display: block; }
+            position: absolute;
+
+            top: 50%;
+
+            left: 50%;
+
+            transform: translate(-50%, -50%) rotate(-30deg);
+
+            font-size: 80px;
+
+            color: rgba(231, 76, 60, 0.15);
+
+            font-weight: bold;
+
+            z-index: 0;
+
+            white-space: nowrap;
+
+            pointer-events: none;
+
+        }
+
+
+
+        header { text-align: center; margin-bottom: 30px; position: relative; z-index: 1; }
+
+        .logo { width: 100px; margin-bottom: 10px; }
+
         
-        .verify-btn { background: #34495e; margin-top: 15px; width: 100%; }
+
+        .status-badge {
+
+            color: white;
+
+            padding: 8px 20px;
+
+            border-radius: 50px;
+
+            display: inline-block;
+
+            font-weight: 600;
+
+            margin-bottom: 10px;
+
+        }
+
+        .status-valid { background-color: var(--verify-green); }
+
+        .status-revoked { background-color: var(--revoked-red); }
+
+
+
+        .title { margin: 0; font-size: 24px; color: var(--sut-orange); }
+
+        .revoked-text { color: var(--revoked-red) !important; }
+
+
+
+        .student-info { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; background: #fff9f5; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 1px solid #ffe0cc; position: relative; z-index: 1; }
+
+        .info-item b { color: #777; font-size: 14px; display: block; }
+
+        .info-item span { font-size: 18px; font-weight: 600; }
+
         
-        @media (max-width: 600px) { .student-card { grid-template-columns: 1fr; } .search-section { flex-direction: column; } }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; position: relative; z-index: 1; }
+
+        table th { background-color: #eee; padding: 12px; text-align: left; border-bottom: 2px solid var(--sut-orange); }
+
+        table td { padding: 12px; border-bottom: 1px solid #eee; }
+
+        
+
+        .technical-section { font-size: 13px; color: #666; border-top: 1px dashed #ccc; padding-top: 20px; }
+
+        .merkle-box { background: #f9f9f9; padding: 15px; border-radius: 5px; word-break: break-all; font-family: monospace; border-left: 4px solid #ddd; margin-top: 10px; }
+
+        
+
+        .footer-note { text-align: center; margin-top: 30px; font-size: 12px; color: #aaa; }
+
+        @media (max-width: 600px) { .student-info { grid-template-columns: 1fr; } }
+
     </style>
+
 </head>
+
 <body>
 
-<div class="container">
+
+
+<div class="container" id="mainContainer">
+
+    <div id="watermark" class="revoked-watermark">REVOKED / เพิกถอนแล้ว</div>
+
+    
+
     <header>
-        <img src="https://upload.wikimedia.org/wikipedia/th/thumb/a/a2/Sut_logo.png/220px-Sut_logo.png" class="logo">
-        <h2 style="margin:0; color: var(--sut-orange);">ระบบตรวจสอบใบรับรองดิจิทัล</h2>
-        <p>Suranaree University of Technology Blockchain</p>
+
+        <img src="https://thailandinnovationportal.com/file/get/file/20211015d41d8cd98f00b204e9800998ecf8427e131258.png" alt="SUT Logo" class="logo">
+
+        <br>
+
+        <div id="statusBadge" class="status-badge" style="display: none;"></div>
+
+        
+
+        <h1 class="title" id="headerTitle">สำนักทะเบียนและประมวลผล</h1>
+
+        <p>มหาวิทยาลัยเทคโนโลยีสุรนารี</p>
+
     </header>
 
-    <!-- ช่องค้นหา -->
-    <div class="search-section">
-        <input type="text" id="certIdInput" placeholder="กรอกเลขที่ใบรับรอง (เช่น SUT-TR-2567-0001)">
-        <button onclick="searchTranscript()">ค้นหาข้อมูล</button>
-    </div>
 
-    <!-- ส่วนแจ้งเตือนโหลด/ผิดพลาด -->
-    <div id="loader" style="display:none; text-align:center; padding: 20px;">กำลังตรวจสอบบล็อกเชน...</div>
-    <div id="pdpaAlert" style="display:none;" class="pdpa-locked">
-        <h3>🔒 ข้อมูลถูกปกปิดตามนโยบาย PDPA</h3>
-        <p>เจ้าของใบรับรองไม่ยินยอมให้เปิดเผยข้อมูลต่อสาธารณะ <br> โปรดล็อกอินด้วยกระเป๋าเงินเจ้าของข้อมูลเพื่อเข้าดู</p>
-        <button style="background: #333;" onclick="connectWallet()">ล็อกอินด้วย MetaMask</button>
-    </div>
 
-    <!-- ส่วนแสดงข้อมูล (จะถูกเปิดเมื่อค้นหาเจอ) -->
-    <div id="resultArea">
-        <div class="status-badge valid" id="statusBadge">✓ ข้อมูลถูกต้องบนบล็อกเชน</div>
-        
-        <div class="student-card">
-            <div class="info-item"><b>ชื่อ-นามสกุล</b> <span id="studentName"></span></div>
-            <div class="info-item"><b>รหัสนักศึกษา</b> <span id="studentId"></span></div>
-            <div class="info-item"><b>หลักสูตร</b> <span id="degree"></span></div>
-            <div class="info-item"><b>สาขาวิชา/คณะ</b> <span id="major"></span></div>
-            <div class="info-item"><b>เกรดเฉลี่ยสะสม (GPAX)</b> <span id="gpax" style="color: var(--success); font-size: 24px;"></span></div>
+    <div class="student-info">
+
+        <div class="info-item">
+
+            <b>ชื่อ-นามสกุล (Student Name)</b>
+
+            <span id="studentName">กำลังโหลด...</span>
+
         </div>
 
-        <h3>รายการวิชาที่บันทึก (Course Records)</h3>
-        <table>
-            <thead>
-                <tr><th>รหัสวิชา</th><th>หน่วยกิต</th><th>เกรด</th></tr>
-            </thead>
-            <tbody id="courseTable"></tbody>
-        </table>
+        <div class="info-item">
 
-        <div class="technical-box">
-            <b>Issued By:</b> <span id="issuedBy"></span> <br>
-            <b>Merkle Root:</b>
-            <span class="merkle-val" id="merkleRootVal"></span>
-            <p style="font-size: 11px;">* รหัสนี้คือลายเซ็นดิจิทัลที่ใช้คุ้มครองข้อมูลเกรดทั้งหมด หากข้อมูลถูกแก้ไข รหัสนี้จะไม่ตรงกับบล็อกเชน</p>
-            
-            <button class="verify-btn" onclick="verifyRoot()">ตรวจสอบความถูกต้องของข้อมูล (Verify Root)</button>
+            <b>รหัสนักศึกษา (Student ID)</b>
+
+            <span id="studentId">-</span>
+
         </div>
+
+        <div class="info-item">
+
+            <b>ระดับปริญญา (Degree)</b>
+
+            <span id="degree">-</span>
+
+        </div>
+
+        <div class="info-item">
+
+            <b>สาขาวิชา (Major)</b>
+
+            <span id="major">-</span>
+
+        </div>
+
+        <div class="info-item">
+
+            <b>คณะ (Faculty)</b>
+
+            <span id="faculty">-</span>
+
+        </div>
+
+        <div class="info-item">
+
+            <b>เกรดเฉลี่ยสะสม (GPAX)</b>
+
+            <span id="gpa">-</span>
+
+        </div>
+
     </div>
+
+
+
+    <h3>รายวิชาที่บันทึก (Course Records)</h3>
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>รหัสวิชา (Course Code)</th>
+
+                <th>เกรด (Grade)</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody id="courseTableBody"></tbody>
+
+    </table>
+
+
+
+    <div class="technical-section">
+
+        <b>รหัสใบรับรอง (Certificate ID):</b> <span id="certId">-</span> <br>
+
+        <b>ออกให้เมื่อ (Issued At):</b> <span id="issuedAt">-</span> <br>
+
+        <b>Merkle Root:</b> 
+
+        <div class="merkle-box" id="merkleRoot">-</div>
+
+    </div>
+
+
+
+    <div class="footer-note">© 2026 Suranaree University of Technology</div>
+
 </div>
 
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+
 <script>
-    // --- ตั้งค่าเบื้องต้น ---
-    const contractAddress = "0x1220f4305944d0dd9d20658bdDE6915bcCEfC4F2"; // ใส่ Address ของคุณ
+
+    const contractAddress = "0x1220f4305944d0dd9d20658bdDE6915bcCEfC4F2";
+
     const abi = [
-        "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string dateOfBirth, string nationality, string degree, string major, string faculty, string graduationDate, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked, bool consentToDisclose))",
-        "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, uint256 credits, string grade)[])",
-        "function verifyCourseGrade(string calldata _certificateId, bytes32 _inputMerkleRoot) external view returns (bool)"
+
+        "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string dateOfBirth, string nationality, string degree, string major, string faculty, string graduationDate, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked))",
+
+        "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, string grade)[])"
+
     ];
 
-    let currentMerkleRoot = "";
 
-    async function searchTranscript() {
-        const id = document.getElementById("certIdInput").value.trim();
-        if(!id) return alert("กรุณากรอกรหัสใบรับรอง");
 
-        // ล้างสถานะหน้าจอ
-        document.getElementById("loader").style.display = "block";
-        document.getElementById("resultArea").style.display = "none";
-        document.getElementById("pdpaAlert").style.display = "none";
+    async function loadData() {
+
+        const urlParams = new URLSearchParams(window.location.search);
+
+        let certId = urlParams.get('id');
+
+        
+
+        if (!certId) {
+
+            document.getElementById("studentName").innerText = "กรุณาระบุ ID ใน URL";
+
+            return;
+
+        }
+
+
 
         try {
+
             const provider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
+
             const contract = new ethers.Contract(contractAddress, abi, provider);
 
-            // 1. ดึงข้อมูลหน้าปก
-            const info = await contract.getTranscript(id);
             
-            // 2. ถ้าดึงข้อมูลผ่าน (ไม่ติด PDPA) แสดงข้อมูล
-            document.getElementById("studentName").innerText = info.studentName;
-            document.getElementById("studentId").innerText = info.studentId;
-            document.getElementById("degree").innerText = info.degree;
-            document.getElementById("major").innerText = info.major + " / " + info.faculty;
-            document.getElementById("gpax").innerText = (Number(info.gpa) / 100).toFixed(2);
-            document.getElementById("merkleRootVal").innerText = info.merkleRoot;
-            document.getElementById("issuedBy").innerText = info.issuedBy;
-            currentMerkleRoot = info.merkleRoot;
 
-            // 3. ดึงรายการวิชา
-            const courses = await contract.getTranscriptCourses(id);
-            const tableBody = document.getElementById("courseTable");
+            const info = await contract.getTranscript(certId.trim());
+
+            const courses = await contract.getTranscriptCourses(certId.trim());
+
+
+
+            // --- ตรวจสอบสถานะ Revoked ---
+
+            const isRevoked = info.revoked;
+
+            const statusBadge = document.getElementById("statusBadge");
+
+            const mainContainer = document.getElementById("mainContainer");
+
+            const watermark = document.getElementById("watermark");
+
+
+
+            if (isRevoked) {
+
+                statusBadge.innerText = "✖ ใบรับรองนี้ถูกเพิกถอน (Revoked)";
+
+                statusBadge.className = "status-badge status-revoked";
+
+                statusBadge.style.display = "inline-block";
+
+                
+
+                // ปรับ UI ให้ดูเป็นเอกสารที่มีปัญหา
+
+                mainContainer.classList.add("revoked-container");
+
+                watermark.style.display = "block";
+
+                document.getElementById("headerTitle").classList.add("revoked-text");
+
+                document.getElementById("gpa").style.color = "var(--revoked-red)";
+
+            } else {
+
+                statusBadge.innerText = "✓ ตรวจสอบความถูกต้องผ่านบล็อกเชนแล้ว";
+
+                statusBadge.className = "status-badge status-valid";
+
+                statusBadge.style.display = "inline-block";
+
+                document.getElementById("gpa").style.color = "var(--verify-green)";
+
+            }
+
+
+
+            // แสดงผลข้อมูลพื้นฐาน
+
+            document.getElementById("studentName").innerText = info.studentName;
+
+            document.getElementById("studentId").innerText = info.studentId;
+
+            document.getElementById("degree").innerText = info.degree;
+
+            document.getElementById("major").innerText = info.major;
+
+            document.getElementById("faculty").innerText = info.faculty;
+
+            document.getElementById("gpa").innerText = (Number(info.gpa) / 100).toFixed(2);
+
+            document.getElementById("certId").innerText = info.certificateId;
+
+            document.getElementById("merkleRoot").innerText = info.merkleRoot;
+
+
+
+            const date = new Date(Number(info.issuedAt) * 1000);
+
+            document.getElementById("issuedAt").innerText = date.toLocaleString('th-TH');
+
+
+
+            // แสดงรายการเกรด
+
+            const tableBody = document.getElementById("courseTableBody");
+
             tableBody.innerHTML = "";
-            courses.forEach(c => {
-                tableBody.innerHTML += `<tr><td>${c.courseCode}</td><td>${c.credits}</td><td class="grade">${c.grade}</td></tr>`;
+
+            courses.forEach(course => {
+
+                tableBody.innerHTML += `<tr><td>${course.courseCode}</td><td style="font-weight:bold; color:var(--sut-orange)">${course.grade}</td></tr>`;
+
             });
 
-            document.getElementById("resultArea").style.display = "block";
+
 
         } catch (error) {
+
             console.error(error);
-            // เช็คว่าติด PDPA หรือไม่จากข้อความ Error ของบล็อกเชน
-            if(error.message.includes("PDPA")) {
-                document.getElementById("pdpaAlert").style.display = "block";
-            } else {
-                alert("ไม่พบข้อมูลใบรับรองนี้ หรือเกิดข้อผิดพลาดในการเชื่อมต่อ");
-            }
-        } finally {
-            document.getElementById("loader").style.display = "none";
+
+            document.getElementById("studentName").innerText = "ไม่พบข้อมูลหรือเกิดข้อผิดพลาด";
+
         }
+
     }
 
-    // ฟังก์ชัน Verify Root
-    async function verifyRoot() {
-        const id = document.getElementById("certIdInput").value.trim();
-        try {
-            const provider = new ethers.JsonRpcProvider("https://ethereum-sepolia-rpc.publicnode.com");
-            const contract = new ethers.Contract(contractAddress, abi, provider);
-            
-            // ส่งค่า Root ไปเปรียบเทียบใน Blockchain
-            const isValid = await contract.verifyCourseGrade(id, currentMerkleRoot);
-            
-            if(isValid) {
-                alert("✅ ยืนยันสำเร็จ: ข้อมูลตรงกับต้นฉบับในบล็อกเชน 100%");
-            } else {
-                alert("❌ คำเตือน: ข้อมูลไม่ตรงกับบล็อกเชน!");
-            }
-        } catch (err) {
-            alert("เกิดข้อผิดพลาดในการตรวจสอบ");
-        }
-    }
 
-    // CONCEPT: เชื่อม MetaMask (กรณีติด PDPA เพื่อพิสูจน์ว่าเป็นเจ้าของใบรับรอง)
-    async function connectWallet() {
-        if (window.ethereum) {
-            await window.ethereum.request({ method: 'eth_requestAccounts' });
-            alert("เชื่อมต่อกระเป๋าสำเร็จ โปรดกดค้นหาอีกครั้ง");
-            searchTranscript(); // ลองดึงข้อมูลใหม่โดยใช้สิทธิ์ของกระเป๋าที่เชื่อม
-        } else {
-            alert("โปรดติดตั้ง MetaMask");
-        }
-    }
+
+    window.onload = loadData;
+
 </script>
+
 </body>
+
 </html>
