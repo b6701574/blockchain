@@ -17,22 +17,27 @@
         .btn-primary { background: var(--sut-orange); color: white; }
         .btn-dark { background: #333; color: white; }
         .btn-print { background: var(--success); color: white; margin-top: 25px; width: 100%; font-size: 16px; }
-        .badge { padding: 5px 15px; border-radius: 50px; font-size: 12px; font-weight: bold; color: white; display: inline-block; }
+        
+        .badge { padding: 5px 15px; border-radius: 50px; font-size: 12px; font-weight: bold; color: white; display: inline-block; margin-left: 5px; }
         .bg-success { background: var(--success); }
         .bg-danger { background: var(--danger); }
         .bg-warning { background: var(--warning); }
+
         #alertArea { display: none; padding: 30px; border-radius: 10px; text-align: center; margin-top: 20px; }
         .pdpa-alert { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .expiry-alert { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .revoked-alert { background: #000; color: #ff4d4d; border: 2px solid #ff4d4d; }
+
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
         .info-group { border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
         .info-group b { display: block; font-size: 11px; color: #888; }
         .info-group span { font-size: 16px; font-weight: 600; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th { background: #333; color: white; padding: 12px; text-align: left; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
         .hash-box { font-family: monospace; background: #f9f9f9; padding: 10px; border: 1px solid #ddd; word-break: break-all; display: block; margin-top: 5px; font-size: 12px; }
+
         #resultArea { display: none; }
         @media print { .no-print { display: none !important; } .container { box-shadow: none; border: none; } }
     </style>
@@ -57,28 +62,26 @@
         <h3 id="alertTitle"></h3>
         <p id="alertMessage"></p>
         <div id="pdpaAction" style="display:none; margin-top: 15px;">
-            <button class="btn btn-dark" onclick="loadData(true)">🔓 เข้าสู่ระบบด้วย MetaMask เพื่อดูข้อมูล</button>
+            <button class="btn btn-dark" onclick="loadData(true)">🔓 เข้าสู่ระบบด้วย MetaMask เพื่อยืนยันสิทธิ์ดูข้อมูล</button>
         </div>
     </div>
 
-    <!-- พื้นที่แสดงข้อมูลใบเกรด -->
+    <!-- พื้นที่แสดงข้อมูล -->
     <div id="resultArea">
         <div style="text-align: right; margin-bottom: 15px;">
             <div id="statusBadge" class="badge"></div>
+            <div id="pdpaStatusBadge" class="badge bg-warning"></div>
         </div>
 
         <div class="info-grid">
             <div class="info-group"><b>ชื่อ-นามสกุล (Student Name)</b> <span id="studentName"></span></div>
             <div class="info-group"><b>รหัสนักศึกษา (Student ID)</b> <span id="studentId"></span></div>
-            
-            <div class="info-group"><b>วัน/เดือน/ปี เกิด (Date of Birth)</b> <span id="dob"></span></div>
-            <div class="info-group"><b>สัญชาติ (Nationality)</b> <span id="nationality"></span></div>
-            
-            <div class="info-group"><b>ระดับปริญญา (Degree)</b> <span id="degree"></span></div>
-            <div class="info-group"><b>สาขาวิชา (Major)</b> <span id="major"></span></div>
-            
-            <div class="info-group"><b>คณะ/สำนักวิชา (Faculty)</b> <span id="faculty"></span></div>
-            <div class="info-group"><b>วันที่สำเร็จการศึกษา (Graduation Date)</b> <span id="gradDate"></span></div>
+            <div class="info-group"><b>วัน/เดือน/ปี เกิด</b> <span id="dob"></span></div>
+            <div class="info-group"><b>สัญชาติ</b> <span id="nationality"></span></div>
+            <div class="info-group"><b>ระดับปริญญา</b> <span id="degree"></span></div>
+            <div class="info-group"><b>สาขาวิชา</b> <span id="major"></span></div>
+            <div class="info-group"><b>คณะ/สำนักวิชา</b> <span id="faculty"></span></div>
+            <div class="info-group"><b>วันที่สำเร็จการศึกษา</b> <span id="gradDate"></span></div>
             
             <div class="info-group" style="grid-column: span 2; background: #ebf9ee; padding: 15px; border-radius: 10px; border: 1px solid #c3e6cb;">
                 <b style="color: #155724;">เกรดเฉลี่ยสะสม (GPAX)</b>
@@ -95,7 +98,9 @@
         <div class="footer-tech">
             <b>เลขที่ใบรับรอง:</b> <span id="dispCertId"></span> <br>
             <b>วันที่บันทึกลงบล็อกเชน:</b> <span id="issuedAt"></span> <br>
+            <b style="color: var(--danger);">วันหมดอายุการแสดงผล (2 ปี):</b> <span id="expiryAt" style="color: var(--danger); font-weight: bold;"></span> <br>
             <b>ผู้ออกเอกสาร:</b> <span id="issuedBy"></span> <br>
+            <br>
             <b>พยานดิจิทัล (Merkle Root):</b>
             <span class="hash-box" id="merkleRoot"></span>
         </div>
@@ -106,8 +111,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <script>
     const contractAddress = "0x1A8cdb58187541682050968b027b9ee3553D6794";
-    
-    // ABI ต้องมี 15 ฟิลด์ตามโครงสร้าง TranscriptCertificate ใน Smart Contract
     const abi = [
         "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string dateOfBirth, string nationality, string degree, string major, string faculty, string graduationDate, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked, bool consentToDisclose))",
         "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, uint256 credits, string grade)[])"
@@ -117,7 +120,6 @@
         const certId = document.getElementById("certIdInput").value.trim();
         if(!certId) return;
 
-        // Reset UI
         document.getElementById("resultArea").style.display = "none";
         document.getElementById("alertArea").style.display = "none";
         document.getElementById("pdpaAction").style.display = "none";
@@ -126,10 +128,9 @@
             let provider, contract;
             
             if (useMetaMask) {
-                // ✅ บังคับเปิด MetaMask เลือกบัญชี
+                // ✅ แก้ไข MetaMask Login ให้เด้งขอสิทธิ์ใหม่
                 if (!window.ethereum) return alert("กรุณาติดตั้ง MetaMask");
                 const browserProvider = new ethers.BrowserProvider(window.ethereum);
-                // บังคับให้เด้ง Popup ขอสิทธิ์ใหม่เสมอ
                 await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
                 const signer = await browserProvider.getSigner();
                 contract = new ethers.Contract(contractAddress, abi, signer);
@@ -138,19 +139,23 @@
                 contract = new ethers.Contract(contractAddress, abi, provider);
             }
 
-            // 1. ดึงข้อมูลใบเกรด
+            // 1. ดึงข้อมูล
             const info = await contract.getTranscript(certId);
 
-            // ✅ ตรวจสอบสถานะการเพิกถอน (Revoked Check)
-            if (info.revoked === true) {
+            // ✅ ตรวจสอบสถานะเพิกถอน
+            if (info.revoked) {
                 showAlert("revoked-alert", "🚫", "เอกสารนี้ถูกเพิกถอนแล้ว", "ใบรายงานผลการศึกษานี้ถูกยกเลิกโดยมหาวิทยาลัยและไม่มีผลทางกฎหมาย");
                 return;
             }
 
-            // 2. ดึงข้อมูลรายวิชา
             const courses = await contract.getTranscriptCourses(certId);
 
-            // 3. แสดงผลข้อมูล (Mapping ทุกฟิลด์)
+            // 2. คำนวณวันหมดอายุ (2 ปี = 730 วัน)
+            const issuedTimestamp = Number(info.issuedAt);
+            const expiryTimestamp = issuedTimestamp + (730 * 24 * 60 * 60);
+            const now = Math.floor(Date.now() / 1000);
+
+            // 3. แสดงผลข้อมูลนักศึกษา
             document.getElementById("studentName").innerText = info.studentName;
             document.getElementById("studentId").innerText = info.studentId;
             document.getElementById("dob").innerText = info.dateOfBirth;
@@ -159,39 +164,48 @@
             document.getElementById("major").innerText = info.major;
             document.getElementById("faculty").innerText = info.faculty;
             document.getElementById("gradDate").innerText = info.graduationDate;
-            
-            // GPA (หาร 100)
             document.getElementById("gpax").innerText = (Number(info.gpa) / 100).toFixed(2);
-            
             document.getElementById("dispCertId").innerText = info.certificateId;
             document.getElementById("merkleRoot").innerText = info.merkleRoot;
             document.getElementById("issuedBy").innerText = info.issuedBy;
-            document.getElementById("issuedAt").innerText = new Date(Number(info.issuedAt) * 1000).toLocaleString('th-TH');
+            
+            // แสดงวันที่ออกและวันหมดอายุ
+            document.getElementById("issuedAt").innerText = new Date(issuedTimestamp * 1000).toLocaleString('th-TH');
+            document.getElementById("expiryAt").innerText = new Date(expiryTimestamp * 1000).toLocaleString('th-TH');
 
-            // แสดงรายการวิชา
+            // แสดงสถานะ Badge
+            const statusBadge = document.getElementById("statusBadge");
+            if (now > expiryTimestamp) {
+                statusBadge.innerText = "หมดอายุ (Expired)";
+                statusBadge.className = "badge bg-danger";
+                // กรณีโหลดข้อมูลสำเร็จแต่เวลาเกิน (ถ้า Contract ไม่ได้ block ไว้)
+                showAlert("expiry-alert", "⚠️", "เอกสารหมดอายุ", "ใบรายงานผลการศึกษานี้หมดอายุการใช้งาน 2 ปีแล้ว");
+                return;
+            } else {
+                statusBadge.innerText = "ปกติ (Active)";
+                statusBadge.className = "badge bg-success";
+            }
+
+            document.getElementById("pdpaStatusBadge").innerText = info.consentToDisclose ? "PDPA: ยินยอมเผยแพร่" : "PDPA: ส่วนบุคคล";
+
+            // ตารางวิชา
             const tableBody = document.getElementById("courseTable");
             tableBody.innerHTML = "";
             courses.forEach(c => {
-                tableBody.innerHTML += `<tr>
-                    <td>${c.courseCode}</td>
-                    <td style="text-align:center">${c.credits}</td>
-                    <td style="text-align:center; font-weight:bold; color:var(--sut-orange);">${c.grade}</td>
-                </tr>`;
+                tableBody.innerHTML += `<tr><td>${c.courseCode}</td><td style="text-align:center">${c.credits}</td><td style="text-align:center; font-weight:bold; color:var(--sut-orange);">${c.grade}</td></tr>`;
             });
 
-            document.getElementById("statusBadge").innerText = "ปกติ (Active)";
-            document.getElementById("statusBadge").className = "badge bg-success";
             document.getElementById("resultArea").style.display = "block";
 
         } catch (error) {
-            console.error("Error Detail:", error);
+            console.error(error);
             if (error.message.includes("expired")) {
-                showAlert("expiry-alert", "⚠️", "เอกสารหมดอายุ", "ใบรายงานผลการศึกษานี้มีอายุเกิน 2 ปี ระบบระงับการแสดงผลออนไลน์ตามนโยบาย");
+                showAlert("expiry-alert", "⚠️", "เอกสารหมดอายุ", "ใบรายงานผลการศึกษานี้มีอายุเกิน 2 ปี ระบบระงับการแสดงผลออนไลน์");
             } else if (error.message.includes("PDPA") || error.message.includes("denied")) {
-                showAlert("pdpa-alert", "🔒", "ข้อมูลถูกจำกัดการเข้าถึง (PDPA)", "นักศึกษาไม่ได้เปิดเผยข้อมูลเป็นสาธารณะ โปรดใช้กระเป๋าเงินเจ้าของข้อมูลเข้าสู่ระบบเพื่อตรวจสอบ");
+                showAlert("pdpa-alert", "🔒", "ข้อมูลถูกจำกัดการเข้าถึง (PDPA)", "โปรดใช้กระเป๋าเงินเจ้าของข้อมูลเข้าสู่ระบบเพื่อตรวจสอบสิทธิ์");
                 document.getElementById("pdpaAction").style.display = "block";
             } else {
-                alert("ไม่พบข้อมูล หรือรหัสสัญญาไม่ถูกต้อง");
+                alert("ไม่พบข้อมูล หรือรหัสใบรับรองผิดพลาด");
             }
         }
     }
