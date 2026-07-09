@@ -63,13 +63,13 @@
 
 <div class="container">
     <header>
-        <img src="https://upload.wikimedia.org/wikipedia/th/thumb/a/a2/Sut_logo.png/220px-Sut_logo.png" class="logo">
+        <img src="https://beta.sut.ac.th/wp-content/uploads/2018/10/sut-logo.png" class="logo">
         <h2 style="color: var(--sut-orange); margin: 5px 0;">ใบรายงานผลการศึกษาอย่างเป็นทางการ</h2>
         <p style="margin: 0; font-weight: 600;">มหาวิทยาลัยเทคโนโลยีสุรนารี</p>
     </header>
 
     <div class="search-box no-print">
-        <input type="text" id="certIdInput" placeholder="เลขที่ใบรับรอง (เช่น SUT-TR-2567-0001)">
+        <input type="text" id="certIdInput" placeholder="เลขที่ใบรับรอง ">
         <button class="btn btn-primary" onclick="loadData(false)">ค้นหา</button>
     </div>
 
@@ -184,7 +184,7 @@
             document.getElementById("expiryAt").innerText = new Date(expiryTimestamp * 1000).toLocaleString('th-TH');
 
             // แสดงสถานะ PDPA
-            document.getElementById("pdpaStatus").innerText = info.consentToDisclose ? "PDPA: ยินยอมเผยแพร่" : "PDPA: ดูได้เฉพาะส่วนบุคคล";
+            document.getElementById("pdpaStatus").innerText = info.consentToDisclose ? "ข้อมูลนี้ถูกยินยอมให้เผยแพร่" : "ข้อมูลนี้ดูได้เฉพาะส่วนบุคคล";
             
             // แสดงสถานะการใช้งาน
             const expiryBadge = document.getElementById("expiryStatus");
