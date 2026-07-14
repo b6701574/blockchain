@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบตรวจสอบใบรายงานผลการศึกษา - SUT Blockchain</title>
+    <title>ระบบตรวจสอบใบรายงานผลการศึกษา - SUT Blockchain (Secure)</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --sut-orange: #e67e22; --success: #27ae60; --danger: #e74c3c; --warning: #f39c12; --bg: #f4f7f6; }
@@ -12,32 +12,27 @@
         header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 20px; }
         .logo { width: 100px; }
         .search-box { display: flex; gap: 10px; margin: 20px 0; background: #fff4ed; padding: 20px; border-radius: 10px; }
-        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; font-family: 'Sarabun'; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: 'Sarabun'; transition: 0.3s; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; font-family: 'Sarabun'; outline: none; }
+        .btn { padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-family: 'Sarabun'; transition: 0.3s; }
         .btn-primary { background: var(--sut-orange); color: white; }
-        .btn-dark { background: #333; color: white; }
-        .btn-print { background: var(--success); color: white; margin-top: 25px; width: 100%; font-size: 16px; }
-        
-        .badge { padding: 5px 15px; border-radius: 50px; font-size: 12px; font-weight: bold; color: white; display: inline-block; margin-left: 5px; }
+        .btn-dark { background: #333; color: white; width: 100%; margin-top: 15px; }
+        .btn-print { background: var(--success); color: white; margin-top: 30px; width: 100%; font-size: 16px; }
+        .badge { padding: 6px 18px; border-radius: 50px; font-size: 12px; font-weight: bold; color: white; display: inline-block; }
         .bg-success { background: var(--success); }
         .bg-danger { background: var(--danger); }
         .bg-warning { background: var(--warning); }
-
         #alertArea { display: none; padding: 30px; border-radius: 10px; text-align: center; margin-top: 20px; }
         .pdpa-alert { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .expiry-alert { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .revoked-alert { background: #000; color: #ff4d4d; border: 2px solid #ff4d4d; }
-
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .revoked-alert { background: #1a1a1a; color: #ff4d4d; border: 2px solid #ff4d4d; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; }
         .info-group { border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
         .info-group b { display: block; font-size: 11px; color: #888; }
-        .info-group span { font-size: 16px; font-weight: 600; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .info-group span { font-size: 17px; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th { background: #333; color: white; padding: 12px; text-align: left; }
         td { padding: 12px; border-bottom: 1px solid #eee; }
-        .hash-box { font-family: monospace; background: #f9f9f9; padding: 10px; border: 1px solid #ddd; word-break: break-all; display: block; margin-top: 5px; font-size: 12px; }
-
+        .hash-box { font-family: monospace; background: #f9f9f9; padding: 10px; border: 1px solid #ddd; word-break: break-all; display: block; margin-top: 5px; font-size: 11px; }
         #resultArea { display: none; }
         @media print { .no-print { display: none !important; } .container { box-shadow: none; border: none; } }
     </style>
@@ -46,27 +41,27 @@
 
 <div class="container">
     <header>
-        <img src="https://beta.sut.ac.th/wp-content/uploads/2018/10/sut-logo.png" class="logo">
+        <img src="https://upload.wikimedia.org/wikipedia/th/thumb/a/a2/Sut_logo.png/220px-Sut_logo.png" class="logo">
         <h2 style="color: var(--sut-orange); margin: 5px 0;">ใบรายงานผลการศึกษาอย่างเป็นทางการ</h2>
-        <p style="margin: 0; font-weight: 600;">มหาวิทยาลัยเทคโนโลยีสุรนารี</p>
+        <p style="margin: 0; font-weight: 600;">Suranaree University of Technology (SUT)</p>
     </header>
 
     <div class="search-box no-print">
-        <input type="text" id="certIdInput" placeholder="เลขที่ใบรับรอง ">
-        <button class="btn btn-primary" onclick="loadData(false)">ค้นหาข้อมูล</button>
+        <input type="text" id="certIdInput" placeholder="กรอกเลขที่ใบรับรอง (เช่น SUT-TR-2567-0001)">
+        <button class="btn btn-primary" onclick="loadData(false)">ค้นหา</button>
     </div>
 
-    <!-- ส่วนแจ้งเตือน Error -->
+    <!-- ส่วนแจ้งเตือนสถานะความปลอดภัย -->
     <div id="alertArea" class="no-print">
-        <div id="alertIcon" style="font-size: 40px; margin-bottom: 10px;"></div>
+        <div id="alertIcon" style="font-size: 50px; margin-bottom: 10px;"></div>
         <h3 id="alertTitle"></h3>
         <p id="alertMessage"></p>
-        <div id="pdpaAction" style="display:none; margin-top: 15px;">
-            <button class="btn btn-dark" onclick="loadData(true)">🔓 เข้าสู่ระบบด้วย MetaMask เพื่อยืนยันสิทธิ์ดูข้อมูล</button>
+        <div id="pdpaAction" style="display:none;">
+            <button class="btn btn-dark" onclick="loadData(true)">🔓 เข้าสู่ระบบด้วย MetaMask เพื่อตรวจสอบสิทธิ์</button>
         </div>
     </div>
 
-    <!-- พื้นที่แสดงข้อมูล -->
+    <!-- ผลลัพธ์ข้อมูลใบเกรด -->
     <div id="resultArea">
         <div style="text-align: right; margin-bottom: 15px;">
             <div id="statusBadge" class="badge"></div>
@@ -82,10 +77,9 @@
             <div class="info-group"><b>สาขาวิชา</b> <span id="major"></span></div>
             <div class="info-group"><b>คณะ/สำนักวิชา</b> <span id="faculty"></span></div>
             <div class="info-group"><b>วันที่สำเร็จการศึกษา</b> <span id="gradDate"></span></div>
-            
-            <div class="info-group" style="grid-column: span 2; background: #ebf9ee; padding: 15px; border-radius: 10px; border: 1px solid #c3e6cb;">
+            <div class="info-group" style="grid-column: span 2; background: #ebf9ee; padding: 20px; border-radius: 10px; border: 1px solid #c3e6cb;">
                 <b style="color: #155724;">เกรดเฉลี่ยสะสม (GPAX)</b>
-                <span id="gpax" style="font-size: 32px; color: #27ae60;"></span>
+                <span id="gpax" style="font-size: 36px; color: #27ae60; font-weight: 700;"></span>
             </div>
         </div>
 
@@ -96,28 +90,40 @@
         </table>
 
         <div class="footer-tech">
-            <b>เลขที่ใบรับรอง:</b> <span id="dispCertId"></span> <br>
-            <b>วันที่บันทึกลงบล็อกเชน:</b> <span id="issuedAt"></span> <br>
-            <b style="color: var(--danger);">วันหมดอายุการแสดงผล (2 ปี):</b> <span id="expiryAt" style="color: var(--danger); font-weight: bold;"></span> <br>
-            <b>ผู้ออกเอกสาร:</b> <span id="issuedBy"></span> <br>
+            <b>เลขที่ใบรับรอง (Certificate ID):</b> <span id="dispCertId"></span> <br>
+            <b>วันที่บันทึกลงบล็อกเชน (Issued At):</b> <span id="issuedAt"></span> <br>
+            <b style="color: var(--danger);">วันหมดอายุการแสดงผล:</b> <span id="expiryAt" style="font-weight:bold;"></span> <br>
+            <b>ผู้ออกใบรับรอง:</b> <span id="issuedBy" style="font-family: monospace;"></span> <br>
             <br>
             <b>พยานดิจิทัล (Merkle Root):</b>
             <span class="hash-box" id="merkleRoot"></span>
         </div>
-        <button class="btn btn-print no-print" onclick="window.print()">พิมพ์ / บันทึกเป็นไฟล์ PDF</button>
+        <button class="btn btn-print no-print" onclick="window.print()">🖨️ พิมพ์ใบรายงานผลการศึกษา (PDF)</button>
     </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <script>
-    const contractAddress = "0x85Ac2242FF984D98C9973871a40705318F3E6739";
+    const contractAddress = "0xe45dF6a27F408BD0e26DeE1ffcb16c64025D353b";
     const abi = [
         "function getTranscript(string calldata _certificateId) external view returns (tuple(string certificateId, string studentId, string studentName, string dateOfBirth, string nationality, string degree, string major, string faculty, string graduationDate, uint256 gpa, bytes32 merkleRoot, uint256 issuedAt, address issuedBy, bool revoked, bool consentToDisclose))",
         "function getTranscriptCourses(string calldata _certificateId) external view returns (tuple(string courseCode, uint256 credits, string grade)[])"
     ];
 
+    // 🛡️ ฟังก์ชัน Sanitization: กรองอักขระประสงค์ร้าย
+    function sanitize(str) {
+        if (!str) return "";
+        // อนุญาตเฉพาะตัวอักษรภาษาอังกฤษ, ตัวเลข, และเครื่องหมายขีดกลาง (-) เท่านั้น
+        return str.replace(/[^\w-]/gi, '').trim();
+    }
+
     async function loadData(useMetaMask) {
-        const certId = document.getElementById("certIdInput").value.trim();
+        let certId = document.getElementById("certIdInput").value;
+        
+        // 🛡️ ขั้นตอนที่ 1: ล้างข้อมูลนำเข้า (Input Sanitization)
+        certId = sanitize(certId);
+        document.getElementById("certIdInput").value = certId; // อัปเดตช่องกรอกให้สะอาด
+
         if(!certId) return;
 
         document.getElementById("resultArea").style.display = "none";
@@ -126,9 +132,7 @@
 
         try {
             let provider, contract;
-            
             if (useMetaMask) {
-                // ✅ แก้ไข MetaMask Login ให้เด้งขอสิทธิ์ใหม่
                 if (!window.ethereum) return alert("กรุณาติดตั้ง MetaMask");
                 const browserProvider = new ethers.BrowserProvider(window.ethereum);
                 await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
@@ -139,23 +143,23 @@
                 contract = new ethers.Contract(contractAddress, abi, provider);
             }
 
-            // 1. ดึงข้อมูล
+            // 1. เรียกข้อมูล
             const info = await contract.getTranscript(certId);
 
-            // ✅ ตรวจสอบสถานะเพิกถอน
+            // 2. ตรวจสอบ Revoke
             if (info.revoked) {
-                showAlert("revoked-alert", "🚫", "เอกสารนี้ถูกเพิกถอนแล้ว", "ใบรายงานผลการศึกษานี้ถูกยกเลิกโดยมหาวิทยาลัยและไม่มีผลทางกฎหมาย");
+                showAlert("revoked-alert", "🚫", "เอกสารนี้ถูกเพิกถอนแล้ว", "ใบรายงานผลการศึกษานี้ไม่มีผลทางกฎหมาย");
                 return;
             }
 
             const courses = await contract.getTranscriptCourses(certId);
 
-            // 2. คำนวณวันหมดอายุ (2 ปี = 730 วัน)
-            const issuedTimestamp = Number(info.issuedAt);
-            const expiryTimestamp = issuedTimestamp + (730 * 24 * 60 * 60);
+            // 3. ตรวจสอบ Expiry (2 ปี)
+            const issuedTs = Number(info.issuedAt);
+            const expiryTs = issuedTs + (730 * 24 * 60 * 60);
             const now = Math.floor(Date.now() / 1000);
 
-            // 3. แสดงผลข้อมูลนักศึกษา
+            // 🛡️ ขั้นตอนที่ 2: แสดงผลแบบปลอดภัย (innerText) เพื่อป้องกัน XSS
             document.getElementById("studentName").innerText = info.studentName;
             document.getElementById("studentId").innerText = info.studentId;
             document.getElementById("dob").innerText = info.dateOfBirth;
@@ -168,31 +172,30 @@
             document.getElementById("dispCertId").innerText = info.certificateId;
             document.getElementById("merkleRoot").innerText = info.merkleRoot;
             document.getElementById("issuedBy").innerText = info.issuedBy;
-            
-            // แสดงวันที่ออกและวันหมดอายุ
-            document.getElementById("issuedAt").innerText = new Date(issuedTimestamp * 1000).toLocaleString('th-TH');
-            document.getElementById("expiryAt").innerText = new Date(expiryTimestamp * 1000).toLocaleString('th-TH');
+            document.getElementById("issuedAt").innerText = new Date(issuedTs * 1000).toLocaleString('th-TH');
+            document.getElementById("expiryAt").innerText = new Date(expiryTs * 1000).toLocaleString('th-TH');
 
-            // แสดงสถานะ Badge
             const statusBadge = document.getElementById("statusBadge");
-            if (now > expiryTimestamp) {
+            if (now > expiryTs) {
                 statusBadge.innerText = "หมดอายุ (Expired)";
                 statusBadge.className = "badge bg-danger";
-                // กรณีโหลดข้อมูลสำเร็จแต่เวลาเกิน (ถ้า Contract ไม่ได้ block ไว้)
-                showAlert("expiry-alert", "⚠️", "เอกสารหมดอายุ", "ใบรายงานผลการศึกษานี้หมดอายุการใช้งาน 2 ปีแล้ว");
+                showAlert("expiry-alert", "⚠️", "เอกสารหมดอายุ", "ใบรายงานผลการศึกษานี้หมดอายุ 2 ปีแล้ว");
                 return;
             } else {
                 statusBadge.innerText = "ปกติ (Active)";
                 statusBadge.className = "badge bg-success";
             }
+            document.getElementById("pdpaStatusBadge").innerText = info.consentToDisclose ? "PDPA: เผยแพร่" : "PDPA: ส่วนบุคคล";
 
-            document.getElementById("pdpaStatusBadge").innerText = info.consentToDisclose ? "ข้อมูลนี้ถูกยินยอมให้เผยแพร่" : "ข้อมูลนี้เป็นข้อมูลส่วนบุคคล";
-
-            // ตารางวิชา
             const tableBody = document.getElementById("courseTable");
-            tableBody.innerHTML = "";
+            tableBody.innerHTML = ""; // เคลียร์ตาราง
             courses.forEach(c => {
-                tableBody.innerHTML += `<tr><td>${c.courseCode}</td><td style="text-align:center">${c.credits}</td><td style="text-align:center; font-weight:bold; color:var(--sut-orange);">${c.grade}</td></tr>`;
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td></td><td style="text-align:center"></td><td style="text-align:center; font-weight:bold; color:var(--sut-orange);"></td>`;
+                tr.cells[0].innerText = c.courseCode; // 🛡️ ป้องกัน XSS ในตาราง
+                tr.cells[1].innerText = c.credits;
+                tr.cells[2].innerText = c.grade;
+                tableBody.appendChild(tr);
             });
 
             document.getElementById("resultArea").style.display = "block";
@@ -200,12 +203,12 @@
         } catch (error) {
             console.error(error);
             if (error.message.includes("expired")) {
-                showAlert("expiry-alert", "⚠️", "เอกสารหมดอายุ", "ใบรายงานผลการศึกษานี้มีอายุเกิน 2 ปี ระบบระงับการแสดงผลออนไลน์");
+                showAlert("expiry-alert", "⚠️", "เอกสารหมดอายุ", "ใบรายงานผลการศึกษานี้หมดอายุการใช้งาน 2 ปีแล้ว");
             } else if (error.message.includes("PDPA") || error.message.includes("denied")) {
-                showAlert("pdpa-alert", "🔒", "ข้อมูลถูกจำกัดการเข้าถึง (PDPA)", "โปรดใช้กระเป๋าเงินเจ้าของข้อมูลเข้าสู่ระบบเพื่อตรวจสอบสิทธิ์");
+                showAlert("pdpa-alert", "🔒", "ข้อมูลถูกจำกัดการเข้าถึง", "โปรดใช้กระเป๋าเงินเจ้าของข้อมูลเข้าสู่ระบบเพื่อตรวจสอบสิทธิ์");
                 document.getElementById("pdpaAction").style.display = "block";
             } else {
-                alert("ไม่พบข้อมูล หรือรหัสใบรับรองผิดพลาด");
+                alert("ไม่พบข้อมูล หรือเลขที่ใบรับรองไม่ถูกต้อง");
             }
         }
     }
@@ -221,8 +224,12 @@
 
     window.onload = () => {
         const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-        if(id) { document.getElementById("certIdInput").value = id; loadData(false); }
+        let id = urlParams.get('id');
+        if(id) {
+            id = sanitize(id); // 🛡️ กรองข้อมูลจาก URL ทันทีที่โหลดหน้า
+            document.getElementById("certIdInput").value = id;
+            loadData(false);
+        }
     }
 </script>
 </body>
