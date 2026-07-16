@@ -147,7 +147,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <script>
-    const contractAddress = "0x85Ac2242FF984D98C9973871a40705318F3E6739"; 
+    const contractAddress = "0xa870998B3b6E83A9f27e543137e3b2aC6F7FccE8"; 
     const etherscanBase = "https://sepolia.etherscan.io/address/";
 
     const abi = [
@@ -225,7 +225,7 @@
                 statusBadge.innerText = "ปกติ (Active)";
                 statusBadge.className = "badge bg-success";
             }
-            document.getElementById("pdpaStatusBadge").innerText = info[14] ? "PDPA: เผยแพร่" : "PDPA: ส่วนบุคคล";
+            document.getElementById("pdpaStatusBadge").innerText = info[14] ? "ข้อมูลนี้ถูกยินยอมให้เผยแพร่" : "ข้อมูลนี้เป็นข้อมูลส่วนบุคคล";
 
             // 5. ดึงข้อมูลรายวิชา
             const courses = await contract.getTranscriptCourses(certId);
